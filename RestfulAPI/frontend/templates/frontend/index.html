@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- 載入靜態檔案 -->
+{% load static %}
+<head>
+<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">-->
+<!--    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>-->
+
+    <title>TO DO LIST</title>
+
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/index/index.css' %}">
+    <link rel="stylesheet" type="text/css" href="/static/rest_framework/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/rest_framework/css/bootstrap-tweaks.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/rest_framework/css/prettify.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/rest_framework/css/default.css"/>
+
+</head>
+<body>
+
+<div class="navbar navbar-static-top navbar-inverse" role="navigation" aria-label="navbar">
+    <div class="container">
+    <span>
+        <a class="navbar-brand" rel="nofollow" href="https://www.django-rest-framework.org/">
+            Django REST framework
+        </a>
+    </span>
+
+    <ul class="nav navbar-nav pull-right">
+    {% if user.is_authenticated %}
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                {{request.user}}
+            </a>
+            <ul class="dropdown-menu">
+                <li><a href='/api/api-authlogout/?next={% url "index" %}'>Log out</a></li>
+            </ul>
+        </li>
+
+    {% else %}
+        <li><a href="/api/api-authlogin/?next=/">Log in</a></li>
+    {% endif %}
+    </ul>
+    </div>
+</div>
+
+
+
+
+
+<div class="card-body">
+    <div class="container">
+
+        <div id="task-container">
+
+            <div id="form-wrapper">
+
+            </div>
+
+            <div id="list-wrapper">
+                <div class="card-body">
+                    <div id="today">
+
+                    </div>
+
+                    <div id="previous">
+<!--                        <p class="heading1"> <span class="today">Previous</span></p>-->
+                    </div>
+
+                    <div id="future">
+<!--                        <p class="heading1"> <span class="today">Future</span></p>-->
+                    </div>
+                </div>
+
+
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+    <script type="text/javascript">
+		/*
+			KEY COMPONENTS:
+			"activeItem" = null until an edit button is clicked. Will contain object of item we are editing
+			"list_snapshot" = Will contain previous state of list. Used for removing extra rows on list update
+
+			PROCESS:
+			1 - Fetch Data and build rows "buildList()"
+			2 - Create Item on form submit
+			3 - Edit Item click - Prefill form and change submit URL
+			4 - Delete Item - Send item id to delete URL
+			5 - Cross out completed task - Event handle updated item
+			NOTES:
+			-- Add event handlers to "edit", "delete", "title"
+			-- Render with strike through items completed
+			-- Remove extra data on re-render
+			-- CSRF Token
+		*/
+		buildList()
+
+        function getCookie(name) {
+		    var cookieValue = null;
+		    if (document.cookie && document.cookie !== '') {
+		        var cookies = document.cookie.split(';');
+		        for (var i = 0; i < cookies.length; i++) {
+		            var cookie = cookies[i].trim();
+		            // Does this cookie string begin with the name we want?
+		            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+		                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+		                break;
+		            }
+		        }
+		    }
+		    return cookieValue;
+		}
+		var csrftoken = getCookie('csrftoken');
+
+		var activeItem = null;
+
+
+
+		function time_transfer(input_time){
+		    var d = new Date(input_time);
+		    d = new Date(d.getTime());
+            var date_format_str = d.getFullYear().toString()+"-"+((d.getMonth()+1).toString().length==2?(d.getMonth()+1).toString():"0"+(d.getMonth()+1).toString())+"-"+(d.getDate().toString().length==2?d.getDate().toString():"0"+d.getDate().toString())+" "+(d.getHours().toString().length==2?d.getHours().toString():"0"+d.getHours().toString())+":"+((parseInt(d.getMinutes()/5)*5).toString().length==2?(parseInt(d.getMinutes()/5)*5).toString():"0"+(parseInt(d.getMinutes()/5)*5).toString());
+            var date_format_html = d.getFullYear().toString()+"-"+((d.getMonth()+1).toString().length==2?(d.getMonth()+1).toString():"0"+(d.getMonth()+1).toString())+"-"+(d.getDate().toString().length==2?d.getDate().toString():"0"+d.getDate().toString())+"T"+(d.getHours().toString().length==2?d.getHours().toString():"0"+d.getHours().toString())+":"+((parseInt(d.getMinutes()/5)*5).toString().length==2?(parseInt(d.getMinutes()/5)*5).toString():"0"+(parseInt(d.getMinutes()/5)*5).toString());
+            return {'date_format_str': date_format_str, 'date_format_html': date_format_html};
+		}
+
+        function buildList(){
+            var form = document.getElementById('form-wrapper')
+
+            form.innerHTML = `
+                <form id="form">
+                    <div class="flex-wrapper">
+                        <div style="flex: 13">
+                            <input id="title" class="form-control" type="text" name="title" placeholder="Add task">
+                            <input id="start_time" class="form-control" type="datetime-local" name="start_time">
+                        </div>
+                        <div style="flex: 2">
+                            <input id="submit" class="btn" type="submit" >
+                        </div>
+                    </div>
+                </form>
+            `
+			var wrapper_today = document.getElementById('today')
+			var wrapper_previous = document.getElementById('previous')
+			var wrapper_future = document.getElementById('future')
+
+			wrapper_today.innerHTML = '<p class="heading1"> <span class="today">Today</span> <span class="float-right headingright">{{today_rest_time}}</span> </p>'
+			wrapper_previous.innerHTML = '<p class="heading1"> <span class="today">Previous</span></p>'
+			wrapper_future.innerHTML = '<p class="heading1"> <span class="today">Future</span></p>'
+
+			var now = new Date();
+			var tomorrow = now.getFullYear()+'-'+(now.getMonth()+1)+'-'+(now.getDate()+1) + ' ' + '0' + ':' + '00' + ':' + '00'
+			tomorrow = new Date(tomorrow)
+
+			var url = "{% url "index" %}api/task/"
+
+			fetch(url)
+			.then((resp) => resp.json())
+			.then(function(data){
+				console.log('Data:', data)
+
+				var list = data
+				for (var i in list){
+				    var start_time = time_transfer(list[i].start_time)['date_format_str'];
+				    var start_time_compete = new Date(start_time);
+				    var task = `
+                                <div style="flex:5">
+                                    <span class="task">${list[i].title}</span>
+                                </div>
+
+                                <div style="flex:5">
+                                    <span class="task">${start_time}</span>
+                                </div>
+					`
+					if (list[i].completed == true){
+					    task = `
+                                <div style="flex:5">
+                                    <strike class="task">${list[i].title}</strike>
+                                </div>
+
+                                <div style="flex:5">
+                                    <strike class="task">${start_time}</strike>
+                                </div>
+					    `
+					}
+
+					var item = `
+						<div id="data-row-${i}" class="task-wrapper flex-wrapper">
+                            ${task}
+
+							<div style="flex:6">
+								<button class="btn btn-sm btn-warning edit">Edit </button>
+                                <button class="btn btn-sm btn-success complete">Complete </button>
+                                <button class="btn btn-sm btn-danger delete">Delete </button>
+							</div>
+						</div>
+					`
+<!-- 判斷start_time 要加入今天 or 過去 or 未來					-->
+
+					if (now > start_time_compete){
+					    wrapper_previous.innerHTML += item
+					} else if (start_time_compete >= tomorrow){
+					    wrapper_future.innerHTML += item
+					} else {
+					    wrapper_today.innerHTML += item
+					}
+				}
+
+
+<!--	edit & delete button功能撰寫			-->
+
+                for (var i in list){
+				    var editBtn = document.getElementsByClassName('edit')[i]
+				    var deleteBtn = document.getElementsByClassName('delete')[i]
+				    var completeBtn = document.getElementsByClassName('complete')[i]
+
+				    editBtn.addEventListener('click', (function(item){
+				        return function(){
+				            editItem(item)
+				        }
+				    })(list[i]))
+
+                    deleteBtn.addEventListener('click', (function(item){
+				        return function(){
+				            deleteItem(item)
+				        }
+				    })(list[i]))
+
+                    completeBtn.addEventListener('click', (function(item){
+				        return function(){
+				            completeItem(item)
+				        }
+				    })(list[i]))
+				}
+
+							})
+		}
+
+<!--	create功能撰寫			-->
+		var form = document.getElementById('form-wrapper')
+        form.addEventListener('submit', function(e){
+			e.preventDefault()
+			console.log('Form submitted')
+			var url = "{% url "index" %}api/task/"
+			var title = document.getElementById('title').value
+			var start_time = document.getElementById('start_time').value
+
+			fetch(url, {
+				method:'POST',
+				headers:{
+					'Content-type':'application/json',
+					'X-CSRFToken':csrftoken,
+				},
+				body:JSON.stringify({'title':title, 'start_time':start_time})
+			    }
+			).then(function(response){
+				buildList()
+				document.getElementById('form').reset()
+			})
+        })
+
+<!--edit function -->
+        function editItem(item){
+            console.log('edit button clicked:', item)
+            var form = document.getElementById('form-wrapper')
+
+            form.innerHTML = `
+                <form id="form">
+                    <div class="flex-wrapper">
+                        <div style="flex: 13">
+                            <input id="title" class="form-control" type="text" name="title" placeholder="Add task">
+                            <input id="start_time" class="form-control" type="datetime-local" name="start_time">
+                        </div>
+                        <div style="flex: 1">
+                            <button id="edit_complete" type="button" class="btn btn-outline-success" style="width: 80px">Edit</button>
+                            <button id="edit_cancel" type="button" class="btn btn-dark" style="width: 80px" onclick="editCancel()">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            `
+            edit_complete_btn = document.getElementById('edit_complete')
+            activeItem = item
+            document.getElementById('title').value =  activeItem.title
+
+            start_time = new Date(activeItem.start_time)
+            document.getElementById('start_time').value = time_transfer(start_time)['date_format_html']
+
+            edit_complete_btn.addEventListener('click', (function(activeItem){
+				        return function(){
+				            var url = activeItem.url
+				            var edit_title = document.getElementById('title').value
+				            var edit_start_time = document.getElementById('start_time').value
+				            fetch(url, {
+                                method:'PUT',
+                                headers:{
+                                    'Content-type':'application/json',
+                                    'X-CSRFToken':csrftoken,
+                                },
+                                body:JSON.stringify({'title':edit_title, 'start_time': edit_start_time, 'completed':activeItem.completed})
+                            }).then((response) => {
+                                buildList()
+                            })
+
+				        }
+				    })(activeItem))
+
+        }
+
+
+         function editCancel(){
+            var form = document.getElementById('form-wrapper')
+            form.innerHTML = `
+                <form id="form">
+                    <div class="flex-wrapper">
+                        <div style="flex: 13">
+                            <input id="title" class="form-control" type="text" name="title" placeholder="Add task">
+                            <input id="start_time" class="form-control" type="datetime-local" name="start_time">
+                        </div>
+                        <div style="flex: 2">
+                            <input id="submit" class="btn" type="submit" >
+                        </div>
+                    </div>
+                </form>
+            `
+         }
+
+
+<!--delete function-->
+        function deleteItem(item){
+            console.log('delete button clicked:', item)
+            var url = item.url
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-type':'application/json',
+					'X-CSRFToken':csrftoken,
+                }
+            }).then((response) => {
+                buildList()
+            })
+
+        }
+
+        function completeItem(item){
+			console.log('complete button clicked')
+			item.completed = !item.completed
+
+            var url = item.url
+			fetch(url, {
+				method:'PUT',
+				headers:{
+					'Content-type':'application/json',
+					'X-CSRFToken':csrftoken,
+				},
+				body:JSON.stringify({'title':item.title, 'start_time': item.start_time, 'completed':item.completed})
+			}).then((response) => {
+				buildList()
+			})
+		}
+
+
+    </script>
+    <script>
+        window.drf = {
+          csrfHeaderName: "X-CSRFTOKEN",
+          csrfToken: "D9YvejAjobkWy5UvKxAYhx447fAnrUvkTkxlAEvDDhjR1WpdizvIZsVhWoygajuC"
+        };
+    </script>
+<!--    直接套api的js-->
+    <script src="/static/rest_framework/js/jquery-3.5.1.min.js"></script>
+    <script src="/static/rest_framework/js/ajax-form.js"></script>
+    <script src="/static/rest_framework/js/bootstrap.min.js"></script>
+    <script src="/static/rest_framework/js/prettify-min.js"></script>
+    <script src="/static/rest_framework/js/default.js"></script>
+    <script>
+    $(document).ready(function() {
+      $('form').ajaxForm();
+    });
+    </script>
+
+</body>
+</html>
