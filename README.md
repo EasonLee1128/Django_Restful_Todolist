@@ -1,5 +1,5 @@
 # 操作影片:
-[![Watch the video](http://img.youtube.com/vi/7TyU7m7ZeoU/maxresdefault.jpg)](https://youtu.be/7TyU7m7ZeoU)
+[![Watch the video](http://img.youtube.com/vi/7TyU7m7ZeoU/0.jpg　)](https://youtu.be/7TyU7m7ZeoU)
 
 # 整體架構:
 ![image](https://github.com/Joyang0419/Django_Restful_Todolist/blob/master/images/architecture.png)
