@@ -1,4 +1,5 @@
 # 整體架構:
+![image](https://github.com/Joyang0419/Django_Restful_Todolist/blob/master/images/architecture.png)
 
 後端的功能使用Django REST framework
 - 資料庫進行新增、讀取、修改、刪除。
