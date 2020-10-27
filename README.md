@@ -15,3 +15,11 @@ PS. SuperUser帳號密碼皆為root。
 輸入完想改的title和start_time按下edit就完成更新，若按下cancel就會使用editCancel()，會取消更新。無論是點選edit or cancel都會恢復原本的submit區塊。
 
 # 實際頁面:
+- 首頁:
+![image](https://github.com/Joyang0419/Django_Restful_Todolist/blob/master/images/index.png)
+
+- Log in:
+![image](https://github.com/Joyang0419/Django_Restful_Todolist/blob/master/images/login.png)
+
+- Log out: 
+![image](https://github.com/Joyang0419/Django_Restful_Todolist/blob/master/images/logout.png)
