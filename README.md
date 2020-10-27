@@ -1,3 +1,6 @@
+# 操作影片:
+[![Watch the video](https://img.youtube.com/vi/T-D1KVIuvjA/maxresdefault.jpg)](https://youtu.be/T-D1KVIuvjA)
+
 # 整體架構:
 ![image](https://github.com/Joyang0419/Django_Restful_Todolist/blob/master/images/architecture.png)
 
